@@ -1,0 +1,137 @@
+services:
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./user-service/.env
+    networks:
+      - sportsclub
+    depends_on:
+      - user-db
+
+  user-db:
+    image: mysql:8
+    container_name: user-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: users
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpass
+    ports:
+      - "33061:3306"
+    networks:
+      - sportsclub
+
+  event-service:
+    build:
+      context: ./event-service
+      dockerfile: Dockerfile
+    container_name: event-service
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./event-service/.env
+    networks:
+      - sportsclub
+    depends_on:
+      - event-db
+
+  event-db:
+    image: mysql:8
+    container_name: event-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: events
+      MYSQL_USER: event
+      MYSQL_PASSWORD: eventpass
+    ports:
+      - "33062:3306"
+    networks:
+      - sportsclub
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8003:8000"
+    env_file:
+      - ./notification-service/.env
+    networks:
+      - sportsclub
+    depends_on:
+      - rabbitmq
+      - notification-db
+
+  notification-db:
+    image: mysql:8
+    container_name: notification-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: notifications
+      MYSQL_USER: notification
+      MYSQL_PASSWORD: notificationpass
+    ports:
+      - "33063:3306"
+    networks:
+      - sportsclub
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - sportsclub
+
+  gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    env_file:
+      - ./api-gateway/.env
+    networks:
+      - sportsclub
+    depends_on:
+      - gateway-db
+      - user-service
+      - event-service
+      - notification-service
+
+  gateway-db:
+    image: mysql:8
+    container_name: gateway-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gateway
+      MYSQL_USER: gateway
+      MYSQL_PASSWORD: gatewaypass
+    ports:
+      - "33064:3306"
+    networks:
+      - sportsclub
+
+networks:
+  sportsclub:
+    driver: bridge
+
+volumes:
+  user-db-data:
+  event-db-data:
+  notification-db-data:
+  gateway-db-data:
