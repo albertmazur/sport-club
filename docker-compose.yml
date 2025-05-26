@@ -11,6 +11,8 @@ services:
       - sportsclub
     depends_on:
       - user-db
+    volumes:
+      - ./user-service:/var/www
 
   user-db:
     image: mysql:8
@@ -39,6 +41,8 @@ services:
       - sportsclub
     depends_on:
       - event-db
+    volumes:
+      - ./event-service:/var/www
 
   event-db:
     image: mysql:8
@@ -68,6 +72,8 @@ services:
     depends_on:
       - rabbitmq
       - notification-db
+    volumes:
+      - ./notification-service:/var/www
 
   notification-db:
     image: mysql:8
@@ -111,6 +117,8 @@ services:
       - user-service
       - event-service
       - notification-service
+    volumes:
+      - ./api-gateway:/var/www
 
   gateway-db:
     image: mysql:8

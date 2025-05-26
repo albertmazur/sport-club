@@ -14,10 +14,9 @@ WORKDIR /var/www
 
 COPY . .
 
-RUN composer install \
- && composer require laravel/octane \
- && php artisan octane:install --server=swoole
+RUN composer install
+RUN php artisan octane:install --server=swoole
 
 EXPOSE 80
 
-CMD php artisan octane:start --host=0.0.0.0 --port=80
+CMD php artisan octane:start --server=swoole --host=0.0.0.0 --port=80
