@@ -5,6 +5,10 @@ set -euo pipefail
 echo "🧹 Sprzątanie Docker..."
 docker-compose down -v --remove-orphans
 
+echo "🔨 Czyszczę frontend/dist... i frontend/node_module"
+rm -rf "frontend/dist/*"
+rm -rf "frontend/node_module"
+
 echo "🔨 Czyszczę vendor/ i .env w usługach..."
 # Lista katalogów z usługami\services=(user event stadium comment payment auth)
 services=(event stadium comment payment auth)

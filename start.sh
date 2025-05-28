@@ -9,6 +9,9 @@ docker-compose build
 echo "🔧 Uruchamianie kontenerów..."
 docker-compose up -d
 
+echo "🔧 Budowanie frontendu w kontenerze Node..."
+docker-compose exec frontend-builder sh -c "npm install && npm run build"
+
 # Lista serwisów (dokładne nazwy z docker-compose.yml)
 services=(event-app stadium-app comment-app payment-app auth-app)
 

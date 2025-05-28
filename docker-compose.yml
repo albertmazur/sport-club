@@ -1,16 +1,10 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: docker/Dockerfile
-    container_name: real-asc-frontend
-    ports:
-      - "3000:80"
-    networks:
-      - app-network
-    depends_on:
-      - gateway
-
+  frontend-builder:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run build"
 
   auth-app:
     build:
@@ -189,9 +183,10 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     ports:
-      - '80:80'
+      - '8080:80'
     volumes:
-      - ./docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./.docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
     networks:
       - app-network
     depends_on:
