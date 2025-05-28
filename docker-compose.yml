@@ -1,145 +1,213 @@
 services:
-  user-service:
+  frontend:
     build:
-      context: ./user-service
-    container_name: user-service
+      context: ./frontend
+      dockerfile: docker/Dockerfile
+    container_name: real-asc-frontend
     ports:
-      - "8001:8000"
-    env_file:
-      - ./user-service/.env
+      - "3000:80"
     networks:
-      - sportsclub
+      - app-network
     depends_on:
-      - user-db
-    volumes:
-      - ./user-service:/var/www
+      - gateway
 
-  user-db:
-    image: mysql:8
-    container_name: user-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: users
-      MYSQL_USER: user
-      MYSQL_PASSWORD: userpass
-    ports:
-      - "33061:3306"
-    networks:
-      - sportsclub
 
-  event-service:
+  auth-app:
     build:
-      context: ./event-service
+      context: ./services/auth
       dockerfile: Dockerfile
-    container_name: event-service
-    ports:
-      - "8002:8000"
-    env_file:
-      - ./event-service/.env
+    container_name: auth-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./services/auth:/var/www
+      - ./.php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      DB_HOST: auth-db
+      DB_DATABASE: auth
+      DB_USERNAME: user
+      DB_PASSWORD: secret
     networks:
-      - sportsclub
+      - app-network
+    depends_on:
+      - auth-db
+
+  auth-db:
+    image: mysql:8.0
+    container_name: auth-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: auth
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+    volumes:
+      - auth_db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  stadium-app:
+    build:
+      context: ./services/stadium
+      dockerfile: Dockerfile
+    container_name: stadium-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./services/stadium:/var/www
+      - ./.php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      DB_HOST: stadium-db
+      DB_DATABASE: stadium
+      DB_USERNAME: user
+      DB_PASSWORD: secret
+    networks:
+      - app-network
+    depends_on:
+      - stadium-db
+
+  stadium-db:
+    image: mysql:8.0
+    container_name: stadium-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: stadium
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+    volumes:
+      - stadium_db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  event-app:
+    build:
+      context: ./services/event
+      dockerfile: Dockerfile
+    container_name: event-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./services/event:/var/www
+      - ./.php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      DB_HOST: event-db
+      DB_DATABASE: event
+      DB_USERNAME: user
+      DB_PASSWORD: secret
+    networks:
+      - app-network
     depends_on:
       - event-db
-    volumes:
-      - ./event-service:/var/www
 
   event-db:
-    image: mysql:8
+    image: mysql:8.0
     container_name: event-db
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: events
-      MYSQL_USER: event
-      MYSQL_PASSWORD: eventpass
-    ports:
-      - "33062:3306"
-    networks:
-      - sportsclub
-
-  notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    container_name: notification-service
-    ports:
-      - "8003:8000"
-    env_file:
-      - ./notification-service/.env
-    networks:
-      - sportsclub
-    depends_on:
-      - rabbitmq
-      - notification-db
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: event
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
     volumes:
-      - ./notification-service:/var/www
-
-  notification-db:
-    image: mysql:8
-    container_name: notification-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: notifications
-      MYSQL_USER: notification
-      MYSQL_PASSWORD: notificationpass
-    ports:
-      - "33063:3306"
+      - event_db_data:/var/lib/mysql
     networks:
-      - sportsclub
+      - app-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+  comment-app:
+    build:
+      context: ./services/comment
+      dockerfile: Dockerfile
+    container_name: comment-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./services/comment:/var/www
+      - ./.php/local.ini:/usr/local/etc/php/conf.d/local.ini
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      DB_HOST: comment-db
+      DB_DATABASE: comment
+      DB_USERNAME: user
+      DB_PASSWORD: secret
     networks:
-      - sportsclub
+      - app-network
+    depends_on:
+      - comment-db
+
+  comment-db:
+    image: mysql:8.0
+    container_name: comment-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: comment
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+    volumes:
+      - comment_db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  payment-app:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    container_name: payment-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./services/payment:/var/www
+      - ./.php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      DB_HOST: payment-db
+      DB_DATABASE: payment
+      DB_USERNAME: user
+      DB_PASSWORD: secret
+      STRIPE_KEY: your_stripe_key
+      STRIPE_SECRET: your_stripe_secret
+    networks:
+      - app-network
+    depends_on:
+      - payment-db
+
+  payment-db:
+    image: mysql:8.0
+    container_name: payment-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: payment
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+    volumes:
+      - payment_db_data:/var/lib/mysql
+    networks:
+      - app-network
 
   gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+    image: nginx:latest
     container_name: api-gateway
+    restart: unless-stopped
     ports:
-      - "8080:80"
-    env_file:
-      - ./api-gateway/.env
-    networks:
-      - sportsclub
-    depends_on:
-      - gateway-db
-      - user-service
-      - event-service
-      - notification-service
+      - '80:80'
     volumes:
-      - ./api-gateway:/var/www
-
-  gateway-db:
-    image: mysql:8
-    container_name: gateway-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: gateway
-      MYSQL_USER: gateway
-      MYSQL_PASSWORD: gatewaypass
-    ports:
-      - "33064:3306"
+      - ./docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - sportsclub
+      - app-network
+    depends_on:
+      - auth-app
+      - stadium-app
+      - event-app
+      - comment-app
+      - payment-app
 
 networks:
-  sportsclub:
+  app-network:
     driver: bridge
 
 volumes:
-  user-db-data:
-  event-db-data:
-  notification-db-data:
-  gateway-db-data:
+  auth_db_data:
+  stadium_db_data:
+  event_db_data:
+  comment_db_data:
+  payment_db_data:
