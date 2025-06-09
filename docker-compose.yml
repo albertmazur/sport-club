@@ -1,5 +1,6 @@
 services:
   frontend-builder:
+    container_name: frontend-builder
     image: node:24-alpine
     working_dir: /app
     volumes:

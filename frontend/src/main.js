@@ -1,11 +1,11 @@
-import './styles.css';
+import './styles.css'
+import './js/stadium.js'
 
-fetch('/api/stadiums')
-  .then(r => r.json())
-  .then(data => {
-    const el = document.getElementById('app');
-    el.innerHTML = `<h1 class="text-2xl font-bold mb-4">Stadiony</h1>` +
-      `<ul class="space-y-2">${data.map(s =>
-        `<li class="p-2 bg-white rounded shadow">${s.name}</li>`
-      ).join('')}</ul>`;
-  });
+document.querySelectorAll('[data-dismiss-target]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const selector = btn.getAttribute('data-dismiss-target')
+    const alertEl  = document.querySelector(selector)
+    if (alertEl) alertEl.remove()
+  })
+})
+
